@@ -51,6 +51,7 @@ void setup() {
   pinMode(TdsSensorPin,INPUT);
   digitalWrite(10, HIGH);
   digitalWrite(11, LOW);
+  digitalWrite(triple_valve_pin,HIGH);
   softSerial1.begin(9600);
   softSerial1.println("欢迎使用雨污分流系统！该系统可以检测水体的pH,可溶性固体含量和浊度，自动进行雨污分流操作。");
 }
@@ -120,9 +121,13 @@ void loop() {
    }
    //三通阀开合代码
    if(TU_value>TU_threshold || pHValue<pH_low_threshold || pHValue>pH_high_threshold || tdsValue>tds_threshold){
-    digitalWrite(triple_valve_pin,HIGH);
+    if(digitalRead(triple_valve_pin)==LOW){
+      digitalWrite(triple_valve_pin,HIGH);
+    }
    }else{
-    digitalWrite(triple_valve_pin,LOW);
+    if(digitalRead(triple_valve_pin)==HIGH){
+      digitalWrite(triple_valve_pin,LOW);
+    }
    }
    delay(1000);
 }
