@@ -6,12 +6,17 @@ All Rights Reserved
 
 
  ****************************************************/
+//蓝牙传感器参数
+#include <SoftwareSerial.h>
+#define bluetooth_transmit 12
+#define bluetooth_receive 13
+SoftwareSerial softSerial1(bluetooth_transmit,bluetooth_receive);
 //三通阀参数
-#define pH_low_threshold = 4.0
-#define pH_high_threshold = 10.0
-#define tds_threshold = 1000
-#define TU_threshold = 2500
-#define triple_valve_pin = 12
+#define pH_low_threshold  4.0
+#define pH_high_threshold  10.0
+#define tds_threshold  1000
+#define TU_threshold  2500
+#define triple_valve_pin  6
 //浊度传感器参数
 float TU=0.0;
 float TU_value=0.0;
@@ -22,7 +27,7 @@ float K_Value=3347.19;
 #define SensorPin A2            //pH meter Analog output to Arduino Analog Input 2
 #define Offset 21.078           //deviation compensate
 #define k -5.6241
-#define LED 13
+#define LED 3
 #define samplingInterval 20
 #define printInterval 800
 #define ArrayLenth  40    //times of collection
@@ -39,11 +44,15 @@ float averageVoltage = 0,tdsValue = 0,temperature = 25;
 
 void setup() {
   // put your setup code here, to run once:
-  Serial.begin(9600);
-  pinMode(LED,OUTPUT);  
+  pinMode(10,OUTPUT);
+  pinMode(11,OUTPUT);
+  pinMode(LED,OUTPUT);
+  pinMode(triple_valve_pin,OUTPUT);  
   pinMode(TdsSensorPin,INPUT);
-  pinMode(triple_valve_pin,OUTPUT);
-  Serial.print("欢迎使用雨污分流系统！该系统可以检测水体的pH,可溶性固体含量和浊度，自动进行雨污分流操作。")
+  digitalWrite(10, HIGH);
+  digitalWrite(11, LOW);
+  softSerial1.begin(9600);
+  softSerial1.println("欢迎使用雨污分流系统！该系统可以检测水体的pH,可溶性固体含量和浊度，自动进行雨污分流操作。");
 }
 
 void loop() {
@@ -56,9 +65,9 @@ void loop() {
   
   if(TU_value<=0){TU_value=0;}
   if(TU_value>=3000){TU_value=3000;}
-  Serial.print("水体浊度值:");
-  Serial.print(TU_value); // print out the value you read:
-  Serial.println("NTU");
+  softSerial1.print("水体浊度值:");
+  softSerial1.print(TU_value); // print out the value you read:
+  softSerial1.println("NTU");
   //pH传感器部分
   static unsigned long samplingTime = millis();
   static unsigned long printTime = millis();
@@ -75,10 +84,10 @@ void loop() {
   }
   if(millis() - printTime > printInterval)   //Every 800 milliseconds, print a numerical, convert the state of the LED indicator
   {
-//    Serial.print("Voltage:");
-//    Serial.print(voltage,2);
-    Serial.print("水体pH值: ");
-    Serial.println(pHValue,2);
+//    softSerial1.print("Voltage:");
+//    softSerial1.print(voltage,2);
+    softSerial1.print("水体pH值: ");
+    softSerial1.println(pHValue,2);
     digitalWrite(LED,digitalRead(LED)^1);
     printTime=millis();
   }
@@ -102,18 +111,18 @@ void loop() {
       float compensationCoefficient=1.0+0.02*(temperature-25.0);    //temperature compensation formula: fFinalResult(25^C) = fFinalResult(current)/(1.0+0.02*(fTP-25.0));
       float compensationVolatge=averageVoltage/compensationCoefficient;  //temperature compensation
       tdsValue=(133.42*compensationVolatge*compensationVolatge*compensationVolatge - 255.86*compensationVolatge*compensationVolatge + 857.39*compensationVolatge)*0.5; //convert voltage value to tds value
-      //Serial.print("voltage:");
-      //Serial.print(averageVoltage,2);
-      //Serial.print("V   ");
-      Serial.print("水体可溶性固体TDS值: ");
-      Serial.print(tdsValue,0);
-      Serial.println("ppm");
+      //softSerial1.print("voltage:");
+      //softSerial1.print(averageVoltage,2);
+      //softSerial1.print("V   ");
+      softSerial1.print("水体可溶性固体TDS值: ");
+      softSerial1.print(tdsValue,0);
+      softSerial1.println("ppm");
    }
    //三通阀开合代码
    if(TU_value>TU_threshold || pHValue<pH_low_threshold || pHValue>pH_high_threshold || tdsValue>tds_threshold){
-    digitalWrite(triple_valve_pin, HIGH);
+    digitalWrite(triple_valve_pin,HIGH);
    }else{
-    digitalWrite(triple_valve_pin, LOW);
+    digitalWrite(triple_valve_pin,LOW);
    }
    delay(1000);
 }
@@ -125,7 +134,7 @@ double avergearray(int* arr, int number){
   double avg;
   long amount=0;
   if(number<=0){
-    Serial.println("Error number for the array to avraging!/n");
+    softSerial1.println("Error number for the array to avraging!/n");
     return 0;
   }
   if(number<5){   //less than 5, calculated directly statistics
